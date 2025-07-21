@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hato Hone St John 111 Call Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .panel {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background-color: #ef4444; /* St John Red */
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: #ffffff;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background-color: #22c55e;
+            color: #ffffff;
+        }
+        .btn-success:hover {
+            background-color: #16a34a;
+            transform: translateY(-1px);
+        }
+        .btn-disabled {
+            background-color: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            z-index: 1000;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            display: none; /* Hidden by default */
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Hidden by default */
+        }
+        .call-history-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .call-history-item:last-child {
+            border-bottom: none;
+        }
+        .caller-text {
+            color: #ef4444; /* St John Red */
+            font-weight: 500;
+        }
+        .user-text {
+            color: #3b82f6; /* Blue for user */
+            font-weight: 500;
+            text-align: right;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Hato Hone St John 111 Call Simulator</h1>
+
+        <div class="panel text-center">
+            <p class="text-lg font-semibold">Your User ID: <span id="userIdDisplay" class="text-blue-600">N/A (Offline)</span></p>
+        </div>
+
+        <div id="scenarioSelection" class="panel">
+            <h2 class="text-2xl font-semibold mb-4">Select a Scenario</h2>
+            <div id="scenarioList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+        </div>
+
+        <div id="simulatorInterface" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 panel flex flex-col h-[600px]">
+                <h2 class="text-2xl font-semibold mb-4">Call Interface</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-xl font-medium">Caller: <span id="callerNameDisplay"></span></p>
+                    <p class="text-xl font-medium">Time: <span id="callTimerDisplay">00:00</span></p>
+                </div>
+
+                <div id="callHistory" class="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+                    <div class="text-gray-500 text-center">Waiting for a call...</div>
+                </div>
+
+                <div class="flex flex-col mb-4">
+                    <button id="answerCallBtn" class="btn btn-primary mb-4">Answer Call</button>
+                    <select id="questionDropdown" class="input-field" disabled>
+                        <option value="">Select a question to ask...</option>
+                    </select>
+                    <button id="askQuestionBtn" class="btn btn-primary mt-2" disabled>Ask Question</button>
+                    <button id="endCallBtn" class="btn btn-secondary mt-4" disabled>End Call</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 panel flex flex-col">
+                <h2 class="text-2xl font-semibold mb-4">CAD System</h2>
+                <form id="cadForm" class="flex-grow flex flex-col">
+                    <label for="cadPatientName" class="block text-sm font-medium text-gray-700">Patient Name (if known):</label>
+                    <input type="text" id="cadPatientName" class="input-field">
+
+                    <label for="cadAge" class="block text-sm font-medium text-gray-700">Age (approx):</label>
+                    <input type="text" id="cadAge" class="input-field">
+
+                    <label for="cadLocation" class="block text-sm font-medium text-gray-700">Location:</label>
+                    <input type="text" id="cadLocation" class="input-field" required>
+
+                    <label for="cadChiefComplaint" class="block text-sm font-medium text-gray-700">Chief Complaint:</label>
+                    <textarea id="cadChiefComplaint" class="input-field" rows="2" required></textarea>
+
+                    <label for="cadPriority" class="block text-sm font-medium text-gray-700">Priority:</label>
+                    <select id="cadPriority" class="input-field" required>
+                        <option value="">Select Priority</option>
+                        <option value="P1 - Purple">P1 - Purple (Life-threatening)</option>
+                        <option value="P2 - Red">P2 - Red (Urgent)</option>
+                        <option value="P3 - Orange">P3 - Orange (Serious)</option>
+                        <option value="P4 - Green">P4 - Green (Non-urgent)</option>
+                    </select>
+
+                    <label for="cadResources" class="block text-sm font-medium text-gray-700">Resources Dispatched:</label>
+                    <input type="text" id="cadResources" class="input-field" placeholder="e.g., Ambulance, First Response Unit">
+
+                    <label for="cadNotes" class="block text-sm font-medium text-gray-700">Notes/Other Info:</label>
+                    <textarea id="cadNotes" class="input-field" rows="3" placeholder="Add additional important details here..."></textarea>
+
+                    <button type="submit" id="dispatchBtn" class="btn btn-success mt-auto">Dispatch Ambulance</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="debriefingPanel" class="hidden panel">
+            <h2 class="text-2xl font-semibold mb-4 text-center">Simulation Debrief</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2">Scenario Details</h3>
+                    <p><strong>Scenario:</strong> <span id="debriefScenarioName"></span></p>
+                    <p><strong>Call Duration:</strong> <span id="debriefCallDuration"></span></p>
+                    <p><strong>Time to Dispatch:</strong> <span id="debriefTimeToDispatch"></span></p>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2">Performance Summary</h3>
+                    <p><strong>Critical Info Captured:</strong> <span id="debriefCriticalInfo"></span></p>
+                    <p><strong>Protocol Adherence:</strong> <span id="debriefProtocolAdherence"></span></p>
+                    <p><strong>Overall Score:</strong> <span id="debriefOverallScore" class="font-bold text-xl"></span></p>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-2">Full Call Transcript</h3>
+            <div id="debriefTranscript" class="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50 h-64 overflow-y-auto">
+                </div>
+
+            <h3 class="text-xl font-semibold mb-2">Feedback and Areas for Improvement</h3>
+            <div id="debriefFeedback" class="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50 h-32 overflow-y-auto">
+                </div>
+
+            <div class="text-center">
+                <button id="restartSimulationBtn" class="btn btn-primary">Start New Simulation</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageBoxOverlay" class="message-box-overlay"></div>
+    <div id="messageBox" class="message-box">
+        <h3 id="messageBoxTitle" class="text-xl font-bold mb-4"></h3>
+        <p id="messageBoxContent" class="mb-6"></p>
+        <button id="messageBoxCloseBtn" class="btn btn-primary">OK</button>
+    </div>
+
+    <audio id="ringingTone" loop>
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAA DRMzBAAAAAADkwAAAAAAAAAAAP/7xBsAAACpAAAAAkQAAAAMAAA3iAADnQAAABuJmQGkFqGSA0VjLwB+K+bVdzzTq2O2QpCqLgY9eW49qL+fE9pLh2zX/vQkH2S864l51y2k7eH7y4T1J40w6s+t2477t2k9y60d3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gB3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gB3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gAAMZBAAAAAADlIAAAAAAAAAAA/++wHAAAAnAAAABMAAABnAAAAM+AAAAA1AAAAMAAAA+ABQANgAEAA+IAACADQAAA3iAADnQAAABuJmQGkFqGSA0VjLwB+K+bVdzzTq2O2QpCqLgY9eW49qL+fE9pLh2zX/vQkH2S864l51y2k7eH7y4T1J40w6s+t2477t2k9y60d3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gB3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gB3i1w6fD5y606gKj+7h959+m59z2+6f0z9w92m1m8y081m06r1+2i87t683s9241w5s4y32v6y50346w2s32y542+gAAxkcAAAAAAAAA/++wJgAAASAAAAALAAALgAAAAAAADwLwAAAAAA+AD4AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7xJAAAACUAAAACwAACYAAAAAAAAAAADwCwAAAAAAAAAA+AD4AEAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//vEkAAAAJQAAAAsAAAmAAAAAAAAAAADwCwAAAAAAAAAA+AD4AEAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//vEkAAAAJQAAAAsAAAmAAAAAAAAAAADwCwAAAAAAAAAA+AD4AEAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//vEkAAAAJQAAAAsAAAmAAAAAAAAAAADwCwAAAAAAAAAA+AD4AEAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script type="module">
+        // IMPORTANT NOTE FOR OFFLINE USE:
+        // The Firebase imports and related code sections below are for saving simulation results
+        // to a database. If you require the simulator to be *completely* offline with
+        // absolutely no external connections, you MUST remove or comment out:
+        // 1. The Firebase import lines at the top of this script.
+        // 2. The `window.onload` Firebase initialisation block.
+        // 3. The `saveSimulationResult` function and its call in `showDebriefing`.
+        // 4. The userIdDisplay element in the HTML.
+        // The rest of the simulator will function perfectly offline.
+
+        // Firebase Imports (Comment out or remove for a truly standalone, no-save version)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables (Comment out or remove for a truly standalone, no-save version)
+        let app;
+        let db;
+        let auth;
+        let userId;
+        let appId;
+
+        // Global Simulation Variables
+        let currentScenario = null;
+        let callTimerInterval = null;
+        let callStartTime = 0;
+        let callHistory = []; // Stores objects { type: 'caller'/'user', text: '...' }
+        let criticalInfoCaptured = {
+            patientName: false,
+            age: false,
+            location: false,
+            chiefComplaint: false,
+            priority: false,
+            resources: false
+        };
+        let questionsAsked = []; // Stores questions asked by the user
+        let scenarioProgress = 0; // Index for current dialogue stage
+        let isCallActive = false;
+        let timeToDispatch = 0;
+        let callEndedByDispatch = false;
+        let isAuthReady = false; // Flag to ensure Firestore operations wait for auth (only if Firebase is enabled)
+
+        // UI Elements
+        const scenarioSelectionDiv = document.getElementById('scenarioSelection');
+        const scenarioListDiv = document.getElementById('scenarioList');
+        const simulatorInterfaceDiv = document.getElementById('simulatorInterface');
+        const callerNameDisplay = document.getElementById('callerNameDisplay');
+        const callTimerDisplay = document.getElementById('callTimerDisplay');
+        const callHistoryDiv = document.getElementById('callHistory');
+        const questionDropdown = document.getElementById('questionDropdown');
+        const askQuestionBtn = document.getElementById('askQuestionBtn');
+        const answerCallBtn = document.getElementById('answerCallBtn');
+        const endCallBtn = document.getElementById('endCallBtn');
+        const cadForm = document.getElementById('cadForm');
+        const dispatchBtn = document.getElementById('dispatchBtn');
+        const debriefingPanel = document.getElementById('debriefingPanel');
+        const debriefScenarioName = document.getElementById('debriefScenarioName');
+        const debriefCallDuration = document.getElementById('debriefCallDuration');
+        const debriefTimeToDispatch = document.getElementById('debriefTimeToDispatch');
+        const debriefCriticalInfo = document.getElementById('debriefCriticalInfo');
+        const debriefProtocolAdherence = document.getElementById('debriefProtocolAdherence');
+        const debriefOverallScore = document.getElementById('debriefOverallScore');
+        const debriefTranscript = document.getElementById('debriefTranscript');
+        const debriefFeedback = document.getElementById('debriefFeedback');
+        const restartSimulationBtn = document.getElementById('restartSimulationBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // CAD Fields
+        const cadPatientNameField = document.getElementById('cadPatientName');
+        const cadAgeField = document.getElementById('cadAge');
+        const cadLocationField = document.getElementById('cadLocation');
+        const cadChiefComplaintField = document.getElementById('cadChiefComplaint');
+        const cadPriorityField = document.getElementById('cadPriority');
+        const cadResourcesField = document.getElementById('cadResources');
+        const cadNotesField = document.getElementById('cadNotes'); // New CAD field
+
+        // Message Box Elements
+        const messageBoxOverlay = document.getElementById('messageBoxOverlay');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
+
+        // Audio Elements
+        const ringingTone = document.getElementById('ringingTone');
+
+        // --- Firebase Initialisation and Authentication (Comment out or remove for fully offline) ---
+        window.onload = async function() {
+            try {
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Use a default for offline
+
+                if (firebaseConfig && Object.keys(firebaseConfig).length > 0) { // Check if config is not empty
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            userIdDisplay.textContent = userId;
+                            isAuthReady = true;
+                            console.log("Firebase authenticated. User ID:", userId);
+                            loadScenarios();
+                        } else {
+                            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        }
+                    });
+                } else {
+                    console.warn("Firebase config not found or empty. Running in standalone/offline mode (no data persistence).");
+                    userIdDisplay.textContent = "N/A (Offline)";
+                    isAuthReady = true; // Allow simulation to run without persistence
+                    loadScenarios(); // Load scenarios even if no Firebase
+                }
+            } catch (error) {
+                console.error("Error initialising Firebase:", error);
+                showMessage("Error", "Failed to initialise Firebase. Data persistence will not be available. " + error.message);
+                userIdDisplay.textContent = "Error (Offline)";
+                isAuthReady = true; // Allow simulation to run without persistence
+                loadScenarios(); // Load scenarios even if Firebase init fails
+            }
+        };
+
+        // --- Scenarios Data (All built-in) ---
+        const scenarios = [
+            {
+                id: 'medical-emergency-1',
+                name: 'Elderly Fall with Injury',
+                difficulty: 'Easy',
+                callerName: 'Sarah Thompson',
+                phoneNumber: '021 123 4567',
+                location: '15 Main Street, Pukekohe, Auckland', // Pre-defined for scoring/CAD fallback
+                initialComplaint: 'My elderly mother has fallen and she\'s hurt her hip!',
+                criticalInfo: {
+                    patientName: 'Elderly Mother (Margaret)',
+                    age: '80s (85 years old)',
+                    location: '15 Main Street, Pukekohe, Auckland',
+                    chiefComplaint: 'Fallen, possible hip injury',
+                    priority: 'P2 - Red',
+                    resources: 'Ambulance'
+                },
+                dialogueTree: [
+                    {
+                        response: 'My elderly mother has fallen and she\'s hurt her hip!',
+                        nextQuestions: [
+                            { questionText: 'What is your address or location?', nextIndex: 1, info: { location: true } },
+                            { questionText: 'Is she awake and conscious?', nextIndex: 2 },
+                            { questionText: 'Is she breathing normally?', nextIndex: 3 },
+                            { questionText: 'How old is your mother?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is her name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'We\'re at 15 Main Street in Pukekohe. Please hurry!',
+                        nextQuestions: [
+                            { questionText: 'Is she awake and conscious?', nextIndex: 2 },
+                            { questionText: 'Is she breathing normally?', nextIndex: 3 },
+                            { questionText: 'How old is your mother?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is her name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'Yes, she\'s awake, but she\'s in a lot of pain. She keeps groaning.',
+                        nextQuestions: [
+                            { questionText: 'Is she breathing normally?', nextIndex: 3 },
+                            { questionText: 'How old is your mother?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is her name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'She\'s breathing, but it sounds a bit shallow. She\'s very pale.',
+                        nextQuestions: [
+                            { questionText: 'How old is your mother?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is her name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'She\'s 85 years old. She lives alone here.',
+                        nextQuestions: [
+                            { questionText: 'What is her name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'Her name is Margaret. She\'s my mum.',
+                        nextQuestions: [
+                            { questionText: 'Can you tell me exactly what happened?', nextIndex: 6, info: { chiefComplaint: true } },
+                        ]
+                    },
+                    {
+                        response: 'She was just walking to the kitchen and tripped over the rug. She landed really awkwardly on her side.',
+                        nextQuestions: [] // End of specific information gathering for this path
+                    },
+                ],
+                recommendedPriority: 'P2 - Red',
+                recommendedResources: 'Ambulance'
+            },
+            {
+                id: 'trauma-incident-1',
+                name: 'Motor Vehicle Accident (MVA)',
+                difficulty: 'Medium',
+                callerName: 'David Lee',
+                phoneNumber: '027 987 6543',
+                location: 'Intersection of Queen Street and Customs Street East, Auckland CBD',
+                initialComplaint: 'There\'s been a huge crash! Two cars, one\'s flipped over!',
+                criticalInfo: {
+                    patientName: 'Multiple patients',
+                    age: 'Unknown',
+                    location: 'Intersection of Queen Street and Customs Street East, Auckland CBD',
+                    chiefComplaint: 'MVA, vehicle flipped, unknown injuries',
+                    priority: 'P1 - Purple',
+                    resources: 'Ambulance, Fire and Emergency NZ, Police'
+                },
+                dialogueTree: [
+                    {
+                        response: 'There\'s been a huge crash! Two cars, one\'s flipped over!',
+                        nextQuestions: [
+                            { questionText: 'What is your address or location?', nextIndex: 1, info: { location: true } },
+                            { questionText: 'How many people are involved or injured?', nextIndex: 2, info: { patientName: true } },
+                            { questionText: 'Are there any serious injuries?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'Are they conscious or awake?', nextIndex: 4 },
+                            { questionText: 'Are they breathing?', nextIndex: 5 },
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'It\'s at the intersection of Queen Street and Customs Street East, right in the CBD!',
+                        nextQuestions: [
+                            { questionText: 'How many people are involved or injured?', nextIndex: 2, info: { patientName: true } },
+                            { questionText: 'Are there any serious injuries?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'Are they conscious or awake?', nextIndex: 4 },
+                            { questionText: 'Are they breathing?', nextIndex: 5 },
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'I can see at least three people. One looks trapped in the flipped car, another is out but holding their head, and a third is walking around, seems okay but shaken.',
+                        nextQuestions: [
+                            { questionText: 'Are there any serious injuries?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'Are they conscious or awake?', nextIndex: 4 },
+                            { questionText: 'Are they breathing?', nextIndex: 5 },
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'The one trapped looks unconscious. The other one holding their head is bleeding. I don\'t know about the third person.',
+                        nextQuestions: [
+                            { questionText: 'Are they conscious or awake?', nextIndex: 4 },
+                            { questionText: 'Are they breathing?', nextIndex: 5 },
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'One is definitely unconscious. The other two, I think so, but they\'re not responding much.',
+                        nextQuestions: [
+                            { questionText: 'Are they breathing?', nextIndex: 5 },
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'I can\'t tell if the unconscious one is breathing. The others seem to be.',
+                        nextQuestions: [
+                            { questionText: 'Is there any fire or smoke?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'No fire or smoke that I can see, thankfully. Just a lot of twisted metal.',
+                        nextQuestions: []
+                    }
+                ],
+                recommendedPriority: 'P1 - Purple',
+                recommendedResources: 'Ambulance, Fire and Emergency NZ, Police'
+            },
+            {
+                id: 'mental-health-call-1',
+                name: 'Distressed Person',
+                difficulty: 'Hard',
+                callerName: 'Concerned Neighbour',
+                phoneNumber: '022 555 1111',
+                location: 'Flat 3, 78 Park Road, Grafton, Auckland',
+                initialComplaint: 'My neighbour is very distressed. I think they might harm themselves.',
+                criticalInfo: {
+                    patientName: 'Neighbour (Alex)',
+                    age: 'Late 20s/Early 30s',
+                    location: 'Flat 3, 78 Park Road, Grafton, Auckland',
+                    chiefComplaint: 'Distressed, possible self-harm risk',
+                    priority: 'P1 - Purple',
+                    resources: 'Ambulance, Police (if risk to others)'
+                },
+                dialogueTree: [
+                    {
+                        response: 'My neighbour is very distressed. I think they might harm themselves.',
+                        nextQuestions: [
+                            { questionText: 'What is your address or location?', nextIndex: 1, info: { location: true } },
+                            { questionText: 'Can you tell me more about why they are distressed?', nextIndex: 2, info: { chiefComplaint: true } },
+                            { questionText: 'Are there any weapons or is anyone in danger?', nextIndex: 3 },
+                            { questionText: 'Are you currently with them?', nextIndex: 4 },
+                            { questionText: 'What is their name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'They\'re in Flat 3, 78 Park Road, Grafton. I\'m in Flat 4.',
+                        nextQuestions: [
+                            { questionText: 'Can you tell me more about why they are distressed?', nextIndex: 2, info: { chiefComplaint: true } },
+                            { questionText: 'Are there any weapons or is anyone in danger?', nextIndex: 3 },
+                            { questionText: 'Are you currently with them?', nextIndex: 4 },
+                            { questionText: 'What is their name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'They\'ve been very withdrawn lately, and I just heard a lot of shouting, then silence. I\'m worried they\'re going to do something to themselves.',
+                        nextQuestions: [
+                            { questionText: 'Are there any weapons or is anyone in danger?', nextIndex: 3 },
+                            { questionText: 'Are you currently with them?', nextIndex: 4 },
+                            { questionText: 'What is their name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'I don\'t think they have any weapons, but I\'m not sure. They\'ve never been violent before.',
+                        nextQuestions: [
+                            { questionText: 'Are you currently with them?', nextIndex: 4 },
+                            { questionText: 'What is their name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'No, I\'m not with them. I\'m too scared to go over there right now.',
+                        nextQuestions: [
+                            { questionText: 'What is their name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'Their name is Alex. I don\'t know their last name.',
+                        nextQuestions: [
+                            { questionText: 'How old are they, approximately?', nextIndex: 6, info: { age: true } },
+                        ]
+                    },
+                    {
+                        response: 'I\'d say they\'re in their late 20s or early 30s.',
+                        nextQuestions: []
+                    }
+                ],
+                recommendedPriority: 'P1 - Purple',
+                recommendedResources: 'Ambulance, Police'
+            },
+            {
+                id: 'child-choking-1',
+                name: 'Child Choking Emergency',
+                difficulty: 'High',
+                callerName: 'Worried Parent',
+                phoneNumber: '021 999 8888',
+                location: '22 School Road, Papatoetoe, Auckland (Daycare Centre)',
+                initialComplaint: 'My child is choking! He can\'t breathe! Oh my god!',
+                criticalInfo: {
+                    patientName: 'Child (Leo)',
+                    age: '2 years old',
+                    location: '22 School Road, Papatoetoe, Auckland (Daycare Centre)',
+                    chiefComplaint: 'Choking, not breathing, unconscious',
+                    priority: 'P1 - Purple',
+                    resources: 'Ambulance, Rapid Response Unit'
+                },
+                dialogueTree: [
+                    {
+                        response: 'My child is choking! He can\'t breathe! Oh my god!',
+                        nextQuestions: [
+                            { questionText: 'What is your exact address or location?', nextIndex: 1, info: { location: true } },
+                            { questionText: 'Is the child conscious or awake?', nextIndex: 2 },
+                            { questionText: 'What did they choke on?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'How old is the child?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is the child\'s name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                        ]
+                    },
+                    {
+                        response: 'We\'re at the Sunshine Daycare, 22 School Road in Papatoetoe. Please, please hurry!',
+                        nextQuestions: [
+                            { questionText: 'Is the child conscious or awake?', nextIndex: 2 },
+                            { questionText: 'What did they choke on?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'How old is the child?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is the child\'s name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 }, // Added for crucial info
+                        ]
+                    },
+                    {
+                        response: 'No! He\'s gone floppy! He\'s not moving! Oh, no!',
+                        nextQuestions: [
+                            { questionText: 'What did they choke on?', nextIndex: 3, info: { chiefComplaint: true } },
+                            { questionText: 'How old is the child?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is the child\'s name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'I think it was a grape! He was eating grapes. I cut them, but maybe not small enough!',
+                        nextQuestions: [
+                            { questionText: 'How old is the child?', nextIndex: 4, info: { age: true } },
+                            { questionText: 'What is the child\'s name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 },
+                            { questionText: 'Can you try back blows or abdominal thrusts?', nextIndex: 8 },
+                        ]
+                    },
+                    {
+                        response: 'He\'s 2 years old, just turned two last month.',
+                        nextQuestions: [
+                            { questionText: 'What is the child\'s name?', nextIndex: 5, info: { patientName: true } },
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 },
+                            { questionText: 'Can you try back blows or abdominal thrusts?', nextIndex: 8 },
+                        ]
+                    },
+                    {
+                        response: 'His name is Leo. Oh Leo, please!',
+                        nextQuestions: [
+                            { questionText: 'Is anyone else there to help?', nextIndex: 6 },
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 },
+                            { questionText: 'Can you try back blows or abdominal thrusts?', nextIndex: 8 },
+                        ]
+                    },
+                    {
+                        response: 'The daycare teacher is here! She\'s trying to help, but she looks panicked too!',
+                        nextQuestions: [
+                            { questionText: 'Is the child breathing AT ALL?', nextIndex: 7 },
+                            { questionText: 'Can you try back blows or abdominal thrusts?', nextIndex: 8 },
+                        ]
+                    },
+                    {
+                        response: 'No, he\'s definitely not breathing. He\'s gone blue!',
+                        nextQuestions: [
+                            { questionText: 'Can you try back blows or abdominal thrusts?', nextIndex: 8 },
+                            { questionText: 'Is there a defibrillator nearby?', nextIndex: 9 }, // AED check
+                        ]
+                    },
+                    {
+                        response: 'Yes, we are trying! He\'s still unresponsive! Nothing is working!',
+                        nextQuestions: [
+                            { questionText: 'Is there a defibrillator nearby?', nextIndex: 9 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 10 },
+                        ]
+                    },
+                    {
+                        response: 'I don\'t know... Maybe in the main office? I\'ll ask the teacher to check!',
+                        nextQuestions: [
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 10 },
+                        ]
+                    },
+                    {
+                        response: 'Yes, the teacher knows CPR! She\'s starting now!',
+                        nextQuestions: [] // End of dialogue for this path
+                    }
+                ],
+                recommendedPriority: 'P1 - Purple',
+                recommendedResources: 'Ambulance, Rapid Response Unit'
+            },
+            {
+                id: 'rural-farm-accident',
+                name: 'Rural Farm Accident',
+                difficulty: 'High',
+                callerName: 'Farm Worker',
+                phoneNumber: '027 111 2222',
+                location: 'Rural property, approx. 15km past Rotorua Airport, off State Highway 30',
+                initialComplaint: 'There\'s been an accident on the farm! John is trapped under some machinery!',
+                criticalInfo: {
+                    patientName: 'John',
+                    age: '50s',
+                    location: 'Rural property, approx. 15km past Rotorua Airport, off State Highway 30 (look for green gate)',
+                    chiefComplaint: 'Trapped under machinery, severe leg injury, bleeding',
+                    priority: 'P1 - Purple',
+                    resources: 'Ambulance, Fire and Emergency NZ (Specialised Rescue), Helicopter if available'
+                },
+                dialogueTree: [
+                    {
+                        response: 'There\'s been an accident on the farm! John is trapped under some machinery!',
+                        nextQuestions: [
+                            { questionText: 'What is your exact address or location?', nextIndex: 1, info: { location: true } },
+                            { questionText: 'Can you tell me more about the machinery and what happened?', nextIndex: 2, info: { chiefComplaint: true } },
+                            { questionText: 'Is John conscious or awake?', nextIndex: 3 },
+                            { questionText: 'Is John breathing normally?', nextIndex: 4 },
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'We\'re on a rural property, about 15km past Rotorua Airport on State Highway 30. Look for a green gate with a large oak tree next to it!',
+                        nextQuestions: [
+                            { questionText: 'Can you tell me more about the machinery and what happened?', nextIndex: 2, info: { chiefComplaint: true } },
+                            { questionText: 'Is John conscious or awake?', nextIndex: 3 },
+                            { questionText: 'Is John breathing normally?', nextIndex: 4 },
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                            { questionText: 'Can you give me specific driving instructions?', nextIndex: 8 },
+                        ]
+                    },
+                    {
+                        response: 'He was working on the tractor, and it slipped off the jack. His leg is trapped right under the wheel. It looks bad!',
+                        nextQuestions: [
+                            { questionText: 'Is John conscious or awake?', nextIndex: 3 },
+                            { questionText: 'Is John breathing normally?', nextIndex: 4 },
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'Yes, he\'s awake, but screaming in pain. He\'s really distressed.',
+                        nextQuestions: [
+                            { questionText: 'Is John breathing normally?', nextIndex: 4 },
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'His breathing is shallow and fast, probably from the pain.',
+                        nextQuestions: [
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'Yes, quite a lot. His leg is twisted, and there\'s a lot of blood.',
+                        nextQuestions: [
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                            { questionText: 'Can you apply pressure to the bleeding wound?', nextIndex: 9 },
+                        ]
+                    },
+                    {
+                        response: 'He\'s about 55 years old, a strong man, but this looks serious.',
+                        nextQuestions: [
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                            { questionText: 'Can you apply pressure to the bleeding wound?', nextIndex: 9 },
+                        ]
+                    },
+                    {
+                        response: 'No, absolutely not. It\'s too heavy and dangerous. We\'ve tried, but it\'s stuck solid.',
+                        nextQuestions: [
+                            { questionText: 'Can you apply pressure to the bleeding wound?', nextIndex: 9 },
+                        ]
+                    },
+                     {
+                        response: 'Okay, so from Rotorua Airport, head east on SH30 for about 15km. You\'ll pass a small bridge. Our gate is green, on the left, just after a bend. It\'s the only one with a large oak tree.',
+                        nextQuestions: [
+                            { questionText: 'Can you tell me more about the machinery and what happened?', nextIndex: 2, info: { chiefComplaint: true } },
+                            { questionText: 'Is John conscious or awake?', nextIndex: 3 },
+                            { questionText: 'Is John breathing normally?', nextIndex: 4 },
+                            { questionText: 'Is he bleeding severely?', nextIndex: 5 },
+                            { questionText: 'How old is John?', nextIndex: 6, info: { age: true } },
+                            { questionText: 'Are you able to safely remove the machinery?', nextIndex: 7 },
+                        ]
+                    },
+                    {
+                        response: 'Yes, I\'m putting pressure on it with a clean cloth, but it\'s still oozing.',
+                        nextQuestions: []
+                    }
+                ],
+                recommendedPriority: 'P1 - Purple',
+                recommendedResources: 'Ambulance, Fire and Emergency NZ (Specialised Rescue), Helicopter if available'
+            }
+        ];
+
+        // --- Utility Functions ---
+        function showMessage(title, content, callback = null) {
+            messageBoxTitle.textContent = title;
+            messageBoxContent.textContent = content;
+            messageBoxOverlay.style.display = 'block';
+            messageBox.style.display = 'block';
+            messageBoxCloseBtn.onclick = () => {
+                messageBoxOverlay.style.display = 'none';
+                messageBox.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        function speakText(text) {
+            // Stop any ongoing speech before starting new one
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-NZ'; // Set language to New Zealand English
+            speechSynthesis.speak(utterance);
+        }
+
+        function updateCallHistory(type, text) {
+            const item = document.createElement('div');
+            item.classList.add('call-history-item', 'p-2', 'rounded-md', 'mb-2');
+            if (type === 'caller') {
+                item.classList.add('bg-red-100', 'caller-text', 'text-left');
+                item.textContent = `Caller: ${text}`;
+            } else {
+                item.classList.add('bg-blue-100', 'user-text', 'text-right');
+                item.textContent = `You: ${text}`;
+            }
+            callHistoryDiv.appendChild(item);
+            callHistoryDiv.scrollTop = callHistoryDiv.scrollHeight; // Auto-scroll to bottom
+            callHistory.push({ type, text });
+        }
+
+        function startTimer() {
+            callStartTime = Date.now();
+            callTimerInterval = setInterval(() => {
+                const elapsed = Date.now() - callStartTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                callTimerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(callTimerInterval);
+            callTimerInterval = null;
+        }
+
+        function resetSimulation() {
+            stopTimer();
+            currentScenario = null;
+            callStartTime = 0;
+            callHistory = [];
+            criticalInfoCaptured = {
+                patientName: false,
+                age: false,
+                location: false,
+                chiefComplaint: false,
+                priority: false,
+                resources: false
+            };
+            questionsAsked = [];
+            scenarioProgress = 0;
+            isCallActive = false;
+            timeToDispatch = 0;
+            callEndedByDispatch = false;
+
+            callTimerDisplay.textContent = '00:00';
+            callerNameDisplay.textContent = '';
+            callHistoryDiv.innerHTML = '<div class="text-gray-500 text-center">Waiting for a call...</div>';
+            questionDropdown.innerHTML = '<option value="">Select a question to ask...</option>';
+            questionDropdown.disabled = true;
+            askQuestionBtn.disabled = true;
+            answerCallBtn.disabled = false;
+            endCallBtn.disabled = true;
+            dispatchBtn.disabled = false; // Enable dispatch button for CAD form
+
+            // Clear CAD fields
+            cadPatientNameField.value = '';
+            cadAgeField.value = '';
+            cadLocationField.value = '';
+            cadChiefComplaintField.value = '';
+            cadPriorityField.value = '';
+            cadResourcesField.value = '';
+            cadNotesField.value = ''; // Clear new notes field
+
+            // Stop ringing tone if playing
+            ringingTone.pause();
+            ringingTone.currentTime = 0;
+
+            simulatorInterfaceDiv.classList.add('hidden');
+            debriefingPanel.classList.add('hidden');
+            scenarioSelectionDiv.classList.remove('hidden');
+        }
+
+        function calculateScore() {
+            let score = 0;
+            let feedback = [];
+
+            // Critical Information
+            let criticalCount = 0;
+            for (const key in criticalInfoCaptured) {
+                if (criticalInfoCaptured[key]) {
+                    criticalCount++;
+                    score += 10; // 10 points per critical info
+                } else {
+                    feedback.push(`- Missed capturing: ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+                }
+            }
+            debriefCriticalInfo.textContent = `${criticalCount}/${Object.keys(criticalInfoCaptured).length} (Total: ${criticalCount * 10} points)`;
+
+            // Protocol Adherence (simplified: asking relevant questions)
+            // For dropdown, we count questions that led to a specific response
+            let relevantQuestionsAsked = questionsAsked.length;
+            debriefProtocolAdherence.textContent = `Questions asked: ${relevantQuestionsAsked}`;
+            score += relevantQuestionsAsked * 5; // 5 points per relevant question
+
+            // Time to Dispatch
+            let timeScore = 0;
+            if (callEndedByDispatch) {
+                if (timeToDispatch <= 60) { // Under 1 minute
+                    timeScore = 50;
+                    feedback.push('- Excellent dispatch time!');
+                } else if (timeToDispatch <= 180) { // Under 3 minutes
+                    timeScore = 30;
+                    feedback.push('- Good dispatch time.');
+                } else {
+                    timeScore = 10;
+                    feedback.push('- Dispatch was a bit slow, consider efficiency.');
+                }
+            } else {
+                feedback.push('- Call ended without dispatching. Ensure all critical incidents lead to dispatch.');
+            }
+            score += timeScore;
+
+            // Overall feedback based on CAD accuracy
+            const currentCadPatientName = cadPatientNameField.value.trim().toLowerCase();
+            const currentCadAge = cadAgeField.value.trim().toLowerCase();
+            const currentCadLocation = cadLocationField.value.trim().toLowerCase();
+            const currentCadChiefComplaint = cadChiefComplaintField.value.trim().toLowerCase();
+            const currentCadPriority = cadPriorityField.value.trim();
+            const currentCadResources = cadResourcesField.value.trim().toLowerCase();
+
+            // Check if CAD fields match expected values (case-insensitive, partial match for location/complaint)
+            if (currentScenario.criticalInfo.patientName && !currentCadPatientName.includes(currentScenario.criticalInfo.patientName.toLowerCase().split('(')[0].trim())) {
+                feedback.push('- Patient Name in CAD was inaccurate or missing.');
+            }
+            if (currentScenario.criticalInfo.age && !currentCadAge.includes(currentScenario.criticalInfo.age.toLowerCase().split('(')[0].trim())) {
+                 feedback.push('- Age in CAD was inaccurate or missing.');
+            }
+            // Check if *any part* of the critical location is in the CAD location (more flexible for varying addresses)
+            const requiredLocationParts = currentScenario.criticalInfo.location.toLowerCase().split(',').map(s => s.trim());
+            const cadLocationMatches = requiredLocationParts.some(part => currentCadLocation.includes(part));
+            if (!cadLocationMatches) {
+                feedback.push('- Location in CAD was inaccurate or missing.');
+            }
+
+            // Check if *any part* of the critical complaint is in the CAD complaint
+            const requiredComplaintParts = currentScenario.criticalInfo.chiefComplaint.toLowerCase().split(',').map(s => s.trim());
+            const cadComplaintMatches = requiredComplaintParts.some(part => currentCadChiefComplaint.includes(part));
+            if (!cadComplaintMatches) {
+                 feedback.push('- Chief Complaint in CAD was inaccurate or missing.');
+            }
+
+            if (currentCadPriority !== currentScenario.recommendedPriority) {
+                feedback.push(`- Priority assigned (${currentCadPriority}) did not match recommended (${currentScenario.recommendedPriority}).`);
+                score -= 15; // Penalty for incorrect priority
+            }
+            if (currentScenario.criticalInfo.resources && !currentCadResources.includes(currentScenario.criticalInfo.resources.toLowerCase().split(',')[0])) {
+                feedback.push('- Resources Dispatched in CAD were inaccurate or missing.');
+            }
+
+            if (feedback.length === 0) {
+                feedback.push('Excellent work! All critical information captured and protocols followed.');
+                score += 50; // Bonus for perfect
+            }
+
+            debriefOverallScore.textContent = `${Math.max(0, score)} points`;
+            debriefFeedback.innerHTML = feedback.map(item => `<p>${item}</p>`).join('');
+
+            return score;
+        }
+
+        async function saveSimulationResult(score) {
+            // (Comment out or remove this function and its call in showDebriefing for fully offline)
+            if (!isAuthReady || !db || !userId || !appId) {
+                console.warn("Firestore not ready, user not authenticated, or appId not defined. Skipping save.");
+                return;
+            }
+
+            try {
+                const resultsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/simulationResults`);
+                await addDoc(resultsCollectionRef, {
+                    scenarioId: currentScenario.id,
+                    scenarioName: currentScenario.name,
+                    score: score,
+                    callDuration: callTimerDisplay.textContent,
+                    timeToDispatch: timeToDispatch > 0 ? `${Math.floor(timeToDispatch / 60).toString().padStart(2, '0')}:${(timeToDispatch % 60).toString().padStart(2, '0')}` : 'N/A',
+                    criticalInfoCaptured: JSON.stringify(criticalInfoCaptured),
+                    cadDetails: { // Save CAD details for review
+                        patientName: cadPatientNameField.value,
+                        age: cadAgeField.value,
+                        location: cadLocationField.value,
+                        chiefComplaint: cadChiefComplaintField.value,
+                        priority: cadPriorityField.value,
+                        resources: cadResourcesField.value,
+                        notes: cadNotesField.value
+                    },
+                    callTranscript: JSON.stringify(callHistory),
+                    timestamp: serverTimestamp()
+                });
+                console.log("Simulation result saved to Firestore.");
+            } catch (e) {
+                console.error("Error saving simulation result:", e);
+                showMessage("Save Error", "Failed to save simulation results. Please check your connection or try again.");
+            }
+        }
+
+        // --- Scenario Loading ---
+        function loadScenarios() {
+            scenarioListDiv.innerHTML = ''; // Clear existing
+            scenarios.forEach(scenario => {
+                const scenarioCard = document.createElement('div');
+                scenarioCard.classList.add('panel', 'cursor-pointer', 'hover:bg-gray-50', 'transition', 'duration-200');
+                scenarioCard.innerHTML = `
+                    <h3 class="text-xl font-semibold text-red-700 mb-2">${scenario.name}</h3>
+                    <p class="text-gray-600 mb-2">${scenario.initialComplaint}</p>
+                    <p class="text-sm text-gray-500">Difficulty: <span class="font-medium">${scenario.difficulty}</span></p>
+                    <button data-scenario-id="${scenario.id}" class="btn btn-primary mt-4 w-full">Start Scenario</button>
+                `;
+                scenarioCard.querySelector('button').addEventListener('click', () => startScenario(scenario.id));
+                scenarioListDiv.appendChild(scenarioCard);
+            });
+        }
+
+        // --- Simulation Flow Functions ---
+        function startScenario(scenarioId) {
+            resetSimulation(); // Reset any previous simulation state
+            currentScenario = scenarios.find(s => s.id === scenarioId);
+            if (!currentScenario) {
+                showMessage("Error", "Scenario not found!");
+                return;
+            }
+
+            scenarioSelectionDiv.classList.add('hidden');
+            simulatorInterfaceDiv.classList.remove('hidden');
+
+            callerNameDisplay.textContent = currentScenario.callerName;
+            updateCallHistory('caller', 'Incoming call...');
+            ringingTone.play(); // Play ringing tone
+            speakText('Incoming call from ' + currentScenario.callerName); // Announce call
+            answerCallBtn.disabled = false;
+        }
+
+        answerCallBtn.addEventListener('click', () => {
+            if (isCallActive) return; // Prevent multiple answers
+            isCallActive = true;
+            answerCallBtn.disabled = true;
+            endCallBtn.disabled = false;
+            questionDropdown.disabled = false;
+            askQuestionBtn.disabled = false;
+            callHistoryDiv.innerHTML = ''; // Clear "Incoming call..." message
+            ringingTone.pause(); // Stop ringing tone
+            ringingTone.currentTime = 0; // Reset audio to start for next use
+            startTimer();
+            const initialCallerResponse = currentScenario.dialogueTree[0].response;
+            updateCallHistory('caller', initialCallerResponse);
+            speakText(initialCallerResponse);
+            populateQuestionDropdown(currentScenario.dialogueTree[0].nextQuestions);
+            updateCADFields(initialCallerResponse); // Auto-populate CAD with initial info
+            cadChiefComplaintField.value = currentScenario.initialComplaint; // Set initial complaint in CAD
+            cadNotesField.value = `Initial Complaint: ${currentScenario.initialComplaint}`; // Add to notes too
+        });
+
+        endCallBtn.addEventListener('click', () => {
+            if (!isCallActive) return;
+            endCall('Call ended by operator.');
+        });
+
+        askQuestionBtn.addEventListener('click', () => {
+            processUserSelection();
+        });
+
+        function populateQuestionDropdown(questions) {
+            questionDropdown.innerHTML = '<option value="">Select a question to ask...</option>';
+            questions.forEach((q, index) => {
+                const option = document.createElement('option');
+                // Store the original index from the dialogueTree to correctly select the next response
+                // We'll use this `data-next-index` to find the correct `next` node in the dialogue tree
+                option.value = index; // The index within the `currentDialogueNode.nextQuestions` array
+                option.textContent = q.questionText;
+                questionDropdown.appendChild(option);
+            });
+            questionDropdown.selectedIndex = 0; // Reset to default "Select a question..."
+            questionDropdown.focus(); // Keep focus on dropdown for quicker selection
+        }
+
+        function processUserSelection() {
+            const selectedDropdownIndex = questionDropdown.value;
+            if (selectedDropdownIndex === "") {
+                showMessage("Selection Required", "Please select a question from the dropdown.");
+                return;
+            }
+
+            const currentDialogueNode = currentScenario.dialogueTree[scenarioProgress];
+            const selectedQuestion = currentDialogueNode.nextQuestions[parseInt(selectedDropdownIndex)];
+
+            updateCallHistory('user', selectedQuestion.questionText);
+            questionsAsked.push(selectedQuestion.questionText); // Log user question
+
+            // Update scenario progress to the next dialogue node
+            scenarioProgress = selectedQuestion.nextIndex;
+            const callerResponse = currentScenario.dialogueTree[scenarioProgress].response;
+            updateCallHistory('caller', callerResponse);
+            speakText(callerResponse);
+
+            // Mark critical info as captured if applicable based on the selected question
+            if (selectedQuestion.info) {
+                for (const key in selectedQuestion.info) {
+                    if (criticalInfoCaptured.hasOwnProperty(key)) {
+                        criticalInfoCaptured[key] = selectedQuestion.info[key];
+                    }
+                }
+            }
+
+            // Auto-fill CAD based on the caller's response
+            updateCADFields(callerResponse);
+
+            // Filter out the asked question from the available options for the next dropdown
+            const remainingQuestions = currentDialogueNode.nextQuestions.filter((_, index) => index !== parseInt(selectedDropdownIndex));
+            // Get the next set of questions from the *new* scenarioProgress node
+            const nextAvailableQuestions = currentScenario.dialogueTree[scenarioProgress].nextQuestions;
+
+            // Combine remaining questions from the current stage with new questions from the next stage
+            // This logic can be refined depending on desired branching behavior.
+            // For simplicity, we just present the next set of questions provided by the dialogue tree's next node.
+            populateQuestionDropdown(nextAvailableQuestions);
+
+            if (nextAvailableQuestions.length === 0) {
+                questionDropdown.disabled = true;
+                askQuestionBtn.disabled = true;
+                showMessage("Information Complete", "It seems all immediate information has been gathered. You can now dispatch the ambulance or end the call.", () => {
+                    // Optional: highlight dispatch button
+                    dispatchBtn.focus();
+                });
+            }
+        }
+
+
+        function updateCADFields(callerResponse) {
+            // Priority: Explicit CAD field values first, then try parsing
+            if (criticalInfoCaptured.patientName && !cadPatientNameField.value) { cadPatientNameField.value = currentScenario.criticalInfo.patientName.split('(')[0].trim(); }
+            if (criticalInfoCaptured.age && !cadAgeField.value) { cadAgeField.value = currentScenario.criticalInfo.age.split('(')[0].trim(); }
+            if (criticalInfoCaptured.location && !cadLocationField.value) { cadLocationField.value = currentScenario.criticalInfo.location; }
+            if (criticalInfoCaptured.chiefComplaint && !cadChiefComplaintField.value) { cadChiefComplaintField.value = currentScenario.criticalInfo.chiefComplaint; }
+            if (currentScenario.recommendedPriority && !cadPriorityField.value) {
+                cadPriorityField.value = currentScenario.recommendedPriority;
+                criticalInfoCaptured.priority = true;
+            }
+            if (currentScenario.recommendedResources && !cadResourcesField.value) {
+                cadResourcesField.value = currentScenario.recommendedResources;
+                criticalInfoCaptured.resources = true;
+            }
+
+            // --- More proactive auto-filling by parsing callerResponse (only if field is empty) ---
+            const lowerCaseResponse = callerResponse.toLowerCase();
+
+            // Location extraction
+            if (!cadLocationField.value) {
+                let match;
+                // Try specific scenario locations
+                if (lowerCaseResponse.includes('15 main street') && lowerCaseResponse.includes('pukekohe')) {
+                    cadLocationField.value = '15 Main Street, Pukekohe, Auckland';
+                    criticalInfoCaptured.location = true;
+                } else if (lowerCaseResponse.includes('queen street') && lowerCaseResponse.includes('customs street east')) {
+                    cadLocationField.value = 'Intersection of Queen Street and Customs Street East, Auckland CBD';
+                    criticalInfoCaptured.location = true;
+                } else if (lowerCaseResponse.includes('flat 3, 78 park road') && lowerCaseResponse.includes('grafton')) {
+                    cadLocationField.value = 'Flat 3, 78 Park Road, Grafton, Auckland';
+                    criticalInfoCaptured.location = true;
+                } else if (lowerCaseResponse.includes('22 school road') && lowerCaseResponse.includes('papatoetoe')) {
+                    cadLocationField.value = '22 School Road, Papatoetoe, Auckland (Daycare Centre)';
+                    criticalInfoCaptured.location = true;
+                } else if (lowerCaseResponse.includes('rural property') && lowerCaseResponse.includes('rotorua airport') && lowerCaseResponse.includes('state highway 30')) {
+                    cadLocationField.value = 'Rural property, approx. 15km past Rotorua Airport, off State Highway 30 (look for green gate)';
+                    criticalInfoCaptured.location = true;
+                }
+                // General address extraction (less precise, as a fallback)
+                else if (match = lowerCaseResponse.match(/(?:at|in|near|we're at)\s+([\w\s,.'-]+(?:street|road|avenue|lane|drive|cbd|intersection|flat|unit|property)?(?:,\s*[\w\s.'-]+)?(?:,\s*[\w\s.'-]+)?)/)) {
+                     cadLocationField.value = match[1].trim().replace(/\b\w/g, l => l.toUpperCase());
+                     criticalInfoCaptured.location = true;
+                 }
+            }
+
+            // Patient Name extraction
+            if (!cadPatientNameField.value || cadPatientNameField.value.includes('unknown') || cadPatientNameField.value.includes('multiple patients')) {
+                let match;
+                if (match = lowerCaseResponse.match(/(?:her name is|his name is|their name is)\s+([a-z]+)/)) {
+                    cadPatientNameField.value = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+                    criticalInfoCaptured.patientName = true;
+                } else if (lowerCaseResponse.includes('at least three people') || lowerCaseResponse.includes('multiple patients')) {
+                    cadPatientNameField.value = 'Multiple patients';
+                    criticalInfoCaptured.patientName = true;
+                } else if (lowerCaseResponse.includes('my neighbour')) {
+                    cadPatientNameField.value = 'Neighbour';
+                    criticalInfoCaptured.patientName = true;
+                } else if (lowerCaseResponse.includes('elderly mother') || lowerCaseResponse.includes('my mum')) {
+                    cadPatientNameField.value = 'Elderly Mother';
+                    criticalInfoCaptured.patientName = true;
+                } else if (lowerCaseResponse.includes('my child') || lowerCaseResponse.includes('his name is leo')) {
+                    cadPatientNameField.value = 'Child (Leo)';
+                    criticalInfoCaptured.patientName = true;
+                } else if (lowerCaseResponse.includes('john is trapped')) {
+                    cadPatientNameField.value = 'John';
+                    criticalInfoCaptured.patientName = true;
+                }
+            }
+
+            // Age extraction
+            if (!cadAgeField.value || cadAgeField.value.includes('unknown')) {
+                let match;
+                if (match = lowerCaseResponse.match(/(?:is|she's|he's|they're)\s+(\d+)\s+years old/)) {
+                    cadAgeField.value = match[1];
+                    criticalInfoCaptured.age = true;
+                } else if (lowerCaseResponse.includes('late 20s or early 30s')) {
+                    cadAgeField.value = '20s-30s';
+                    criticalInfoCaptured.age = true;
+                } else if (lowerCaseResponse.includes('85 years old') || lowerCaseResponse.includes('80s')) {
+                    cadAgeField.value = '80s';
+                    criticalInfoCaptured.age = true;
+                } else if (lowerCaseResponse.includes('2 years old') || lowerCaseResponse.includes('just turned two')) {
+                    cadAgeField.value = '2 years old';
+                    criticalInfoCaptured.age = true;
+                } else if (lowerCaseResponse.includes('about 55 years old')) {
+                    cadAgeField.value = '50s (approx 55)';
+                    criticalInfoCaptured.age = true;
+                }
+            }
+
+            // Chief Complaint extraction (more challenging to make generic, rely on info flag and initial complaint more)
+            if (!cadChiefComplaintField.value) {
+                if (currentScenario.initialComplaint) { // Always populate with initial complaint if known
+                    cadChiefComplaintField.value = currentScenario.initialComplaint;
+                    criticalInfoCaptured.chiefComplaint = true;
+                }
+                 if (lowerCaseResponse.includes('fallen') && lowerCaseResponse.includes('hip')) {
+                    cadChiefComplaintField.value = 'Fall, possible hip injury';
+                    criticalInfoCaptured.chiefComplaint = true;
+                } else if (lowerCaseResponse.includes('huge crash') || lowerCaseResponse.includes('flipped car')) {
+                    cadChiefComplaintField.value = 'Motor Vehicle Accident, vehicle flipped, unknown injuries';
+                    criticalInfoCaptured.chiefComplaint = true;
+                } else if (lowerCaseResponse.includes('distressed') && lowerCaseResponse.includes('harm themselves')) {
+                    cadChiefComplaintField.value = 'Distressed person, possible self-harm risk';
+                    criticalInfoCaptured.chiefComplaint = true;
+                } else if (lowerCaseResponse.includes('choking') && lowerCaseResponse.includes('can\'t breathe')) {
+                    cadChiefComplaintField.value = 'Choking, not breathing';
+                    criticalInfoCaptured.chiefComplaint = true;
+                } else if (lowerCaseResponse.includes('trapped under machinery') || lowerCaseResponse.includes('tractor') && lowerCaseResponse.includes('leg is trapped')) {
+                    cadChiefComplaintField.value = 'Trapped under machinery, severe injury';
+                    criticalInfoCaptured.chiefComplaint = true;
+                }
+            }
+
+            // Notes / Other Info (append all relevant info from conversation)
+            if (cadNotesField.value === '') { // Initialize with initial complaint if empty
+                cadNotesField.value = `Initial Complaint: ${currentScenario.initialComplaint}\n`;
+            }
+            // You can add more logic here to append significant caller responses to notes
+            // For example: cadNotesField.value += `\nCaller: ${callerResponse}`;
+        }
+
+        cadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            dispatchAmbulance();
+        });
+
+        function dispatchAmbulance() {
+            if (!isCallActive) {
+                showMessage("No Active Call", "You must have an active call to dispatch an ambulance.");
+                return;
+            }
+
+            // Basic CAD validation
+            const cadLocation = cadLocationField.value.trim();
+            const cadChiefComplaint = cadChiefComplaintField.value.trim();
+            const cadPriority = cadPriorityField.value.trim();
+
+            if (!cadLocation || !cadChiefComplaint || !cadPriority) {
+                showMessage("Missing CAD Information", "Please fill in Location, Chief Complaint, and Priority in the CAD system before dispatching.");
+                return;
+            }
+
+            callEndedByDispatch = true;
+            timeToDispatch = Math.floor((Date.now() - callStartTime) / 1000); // Time in seconds
+            endCall('Ambulance dispatched.');
+        }
+
+        function endCall(reason) {
+            if (!isCallActive) return;
+            isCallActive = false;
+            stopTimer();
+            questionDropdown.disabled = true;
+            askQuestionBtn.disabled = true;
+            endCallBtn.disabled = true;
+            answerCallBtn.disabled = true; // Cannot answer again after ending
+
+            updateCallHistory('system', reason);
+            showDebriefing();
+        }
+
+        function showDebriefing() {
+            simulatorInterfaceDiv.classList.add('hidden');
+            debriefingPanel.classList.remove('hidden');
+
+            const elapsed = Date.now() - callStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const durationString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            debriefScenarioName.textContent = currentScenario.name;
+            debriefCallDuration.textContent = durationString;
+            debriefTimeToDispatch.textContent = callEndedByDispatch ?
+                `${Math.floor(timeToDispatch / 60).toString().padStart(2, '0')}:${(timeToDispatch % 60).toString().padStart(2, '0')}` : 'N/A';
+
+            // Populate transcript
+            debriefTranscript.innerHTML = callHistory.map(entry => {
+                const className = entry.type === 'caller' ? 'caller-text' : (entry.type === 'user' ? 'user-text' : 'text-gray-500');
+                const prefix = entry.type === 'caller' ? 'Caller:' : (entry.type === 'user' ? 'You:' : 'System:');
+                return `<p class="${className}">${prefix} ${entry.text}</p>`;
+            }).join('');
+
+            const score = calculateScore();
+            // Call saveSimulationResult only if Firebase is configured
+            if (typeof app !== 'undefined' && app !== null) {
+                saveSimulationResult(score);
+            } else {
+                console.warn("Firebase not initialised. Skipping saving results to database.");
+            }
+        }
+
+        restartSimulationBtn.addEventListener('click', resetSimulation);
+
+        // Initial load of scenarios happens in window.onload after Firebase (optional) is handled
+    </script>
+</body>
+</html>
