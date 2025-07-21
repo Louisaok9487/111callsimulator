@@ -304,6 +304,7 @@
         const PATIENCE_DECREASE_IRRELEVANT = 10;
         const PATIENCE_DECREASE_TIME_PER_SEC = 0.5; // Patience decreases by 0.5 per second of inaction/slow response
         let lastQuestionTime = 0; // Timestamp of last question asked
+        let availableQuestionsInDropdown = []; // Stores the actual question objects currently in the dropdown
 
         // UI Elements
         const scenarioSelectionDiv = document.getElementById('scenarioSelection');
@@ -909,8 +910,109 @@
                 ],
                 recommendedPriority: 'P1 - Purple',
                 recommendedResources: 'Ambulance, Fire and Emergency NZ (Specialised Rescue), Helicopter if available'
+            },
+            {
+                id: 'cardiac-arrest-1',
+                name: 'Cardiac Arrest',
+                difficulty: 'Very High',
+                callerName: 'Bystander',
+                phoneNumber: '027 333 4444',
+                location: 'Public Park, near the playground, 10 Oak Avenue, Mount Eden, Auckland',
+                initialComplaint: 'Someone\'s collapsed! They\'re not breathing and they\'re not moving!',
+                learningObjectives: [
+                    'Recognise signs of cardiac arrest.',
+                    'Initiate and guide bystander CPR effectively.',
+                    'Locate and deploy an AED rapidly.',
+                    'Maintain calm and clear communication in high-stress situations.'
+                ],
+                criticalInfo: {
+                    patientName: 'Unknown Adult',
+                    age: 'Adult',
+                    location: 'Public Park, near the playground, 10 Oak Avenue, Mount Eden, Auckland',
+                    chiefComplaint: 'Unresponsive, not breathing, collapsed (Cardiac Arrest)',
+                    priority: 'P1 - Purple',
+                    resources: 'Ambulance, Rapid Response Unit, AED, Police (if public safety concern)'
+                },
+                dialogueTree: [
+                    {
+                        response: 'Someone\'s collapsed! They\'re not breathing and they\'re not moving!',
+                        nextQuestions: [
+                            { questionText: 'What is your exact address or location?', nextIndex: 1, info: { location: 'Public Park, near the playground, 10 Oak Avenue, Mount Eden, Auckland' }, isCritical: true, timeWindow: 20 },
+                            { questionText: 'Is the person conscious or awake?', nextIndex: 2, isCritical: true, timeWindow: 15 },
+                            { questionText: 'Are they breathing AT ALL?', nextIndex: 3, isCritical: true, timeWindow: 15 },
+                            { questionText: 'Is there anyone else with you who can help?', nextIndex: 4 },
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                        ],
+                        optimalQuestions: [0, 1, 2, 5, 4] // Location, Conscious, Breathing, CPR, AED
+                    },
+                    {
+                        response: 'We\'re at the public park, near the playground, on Oak Avenue in Mount Eden. Number 10 Oak Avenue!',
+                        nextQuestions: [
+                            { questionText: 'Is the person conscious or awake?', nextIndex: 2, isCritical: true, timeWindow: 15 },
+                            { questionText: 'Are they breathing AT ALL?', nextIndex: 3, isCritical: true, timeWindow: 15 },
+                            { questionText: 'Is there anyone else with you who can help?', nextIndex: 4 },
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                        ],
+                        optimalQuestions: [0, 1, 4, 3]
+                    },
+                    {
+                        response: 'No, they\'re completely unresponsive! I\'ve tried shaking them!',
+                        nextQuestions: [
+                            { questionText: 'Are they breathing AT ALL?', nextIndex: 3, isCritical: true, timeWindow: 15 },
+                            { questionText: 'Is there anyone else with you who can help?', nextIndex: 4 },
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                        ],
+                        optimalQuestions: [0, 3, 2, 1]
+                    },
+                    {
+                        response: 'No, not breathing at all! Their chest isn\'t moving! Oh my god!',
+                        nextQuestions: [
+                            { questionText: 'Is there anyone else with you who can help?', nextIndex: 4 },
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                        ],
+                        optimalQuestions: [2, 1, 0]
+                    },
+                    {
+                        response: 'Yes, my friend is here! She\'s a nurse, actually!',
+                        nextQuestions: [
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                            { questionText: 'Can your friend start CPR?', nextIndex: 7, info: { chiefComplaint: 'Unresponsive, not breathing, Cardiac Arrest, CPR in progress' }, isCritical: true, timeWindow: 10 },
+                        ],
+                        optimalQuestions: [2, 0, 1]
+                    },
+                    {
+                        response: 'I think there\'s one in the community hall across the road! I\'ll go check!',
+                        nextQuestions: [
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 6, isCritical: true, timeWindow: 20 },
+                            { questionText: 'Can your friend start CPR?', nextIndex: 7, info: { chiefComplaint: 'Unresponsive, not breathing, Cardiac Arrest, CPR in progress' }, isCritical: true, timeWindow: 10 },
+                        ],
+                        optimalQuestions: [1, 0]
+                    },
+                    {
+                        response: 'I know basic first aid, but I\'m so panicked! Yes, I can try!',
+                        nextQuestions: [
+                            { questionText: 'Is there an AED (Automated External Defibrillator) nearby?', nextIndex: 5, isCritical: true, timeWindow: 40 },
+                            { questionText: 'Can you start CPR if you know how?', nextIndex: 7, info: { chiefComplaint: 'Unresponsive, not breathing, Cardiac Arrest, CPR in progress' }, isCritical: true, timeWindow: 10 }, // This should be the nurse starting CPR
+                        ],
+                        optimalQuestions: [1, 0]
+                    },
+                    {
+                        response: 'Yes, my friend (the nurse) is starting CPR now! She\'s doing chest compressions!',
+                        nextQuestions: []
+                    }
+                ],
+                recommendedPriority: 'P1 - Purple',
+                recommendedResources: 'Ambulance, Rapid Response Unit, AED, Police'
             }
         ];
+
+        // Global variable to hold the currently available questions for the dropdown
+        // let availableQuestionsInDropdown = []; // REMOVED: Declared globally above
 
         // --- Utility Functions ---
         function showMessage(title, content, callback = null) {
@@ -1013,6 +1115,7 @@
             callEndedByDispatch = false;
             callerPatience = 100; // Reset patience
             lastQuestionTime = 0;
+            availableQuestionsInDropdown = []; // Clear available questions (no 'let' here)
 
             callTimerDisplay.textContent = '00:00';
             callTimerDisplay.classList.remove('timer-medium', 'timer-high');
@@ -1287,6 +1390,7 @@
             const initialCallerResponse = currentScenario.dialogueTree[0].response;
             updateCallHistory('caller', initialCallerResponse);
             speakText(initialCallerResponse);
+            // Populate dropdown with initial questions from the first dialogue node
             populateQuestionDropdown(currentScenario.dialogueTree[0].nextQuestions);
             updateCADFields(initialCallerResponse); // Auto-populate CAD with initial info
             cadChiefComplaintField.value = currentScenario.initialComplaint; // Set initial complaint in CAD
@@ -1306,21 +1410,38 @@
         hintBtn.addEventListener('click', () => {
             const currentDialogueNode = currentScenario.dialogueTree[scenarioProgress];
             if (currentDialogueNode.optimalQuestions && currentDialogueNode.optimalQuestions.length > 0) {
-                const optimalQuestionIndex = currentDialogueNode.optimalQuestions[0]; // Get the first optimal question
-                const optimalQuestionText = currentDialogueNode.nextQuestions[optimalQuestionIndex].questionText;
-
-                // Find the option in the dropdown and highlight it
-                for (let i = 0; i < questionDropdown.options.length; i++) {
-                    if (questionDropdown.options[i].textContent === optimalQuestionText) {
-                        questionDropdown.selectedIndex = i;
-                        questionDropdown.options[i].classList.add('hint-option'); // Add highlight class
-                        setTimeout(() => { // Remove highlight after a short delay
-                            questionDropdown.options[i].classList.remove('hint-option');
-                        }, 1500);
+                // Find the first optimal question that is still available in the dropdown
+                let optimalQuestion = null;
+                for (const optIndex of currentDialogueNode.optimalQuestions) {
+                    const potentialOptimalQ = currentDialogueNode.nextQuestions[optIndex]; // Get the question object from the scenario's full list
+                    if (availableQuestionsInDropdown.some(q => q.questionText === potentialOptimalQ.questionText)) {
+                        optimalQuestion = potentialOptimalQ;
                         break;
                     }
                 }
-                speakText("Hint: Consider asking about " + optimalQuestionText);
+
+                if (optimalQuestion) {
+                    // Find the option in the dropdown and highlight it
+                    for (let i = 0; i < questionDropdown.options.length; i++) {
+                        // Compare the parsed value of the option to the optimal question's text
+                        try {
+                            const optionValue = JSON.parse(questionDropdown.options[i].value);
+                            if (optionValue.questionText === optimalQuestion.questionText) {
+                                questionDropdown.selectedIndex = i;
+                                questionDropdown.options[i].classList.add('hint-option'); // Add highlight class
+                                setTimeout(() => { // Remove highlight after a short delay
+                                    questionDropdown.options[i].classList.remove('hint-option');
+                                }, 1500);
+                                break;
+                            }
+                        } catch (e) {
+                            console.error("Error parsing option value for hint:", e);
+                        }
+                    }
+                    speakText("Hint: Consider asking about " + optimalQuestion.questionText);
+                } else {
+                    showMessage("No Specific Hint", "All optimal questions for this stage have been asked or there are no more optimal questions defined.");
+                }
             } else {
                 showMessage("No Specific Hint", "There isn't a specific hint for this stage, focus on gathering all critical info.");
             }
@@ -1331,32 +1452,46 @@
 
         function populateQuestionDropdown(questions) {
             questionDropdown.innerHTML = '<option value="">Select a question to ask...</option>';
-            questions.forEach((q, index) => {
+            availableQuestionsInDropdown = []; // Reset the in-memory list
+
+            // Add questions to the dropdown and to the in-memory list
+            questions.forEach(q => {
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = JSON.stringify(q); // Store the full question object
                 option.textContent = q.questionText;
                 questionDropdown.appendChild(option);
+                availableQuestionsInDropdown.push(q);
             });
             questionDropdown.selectedIndex = 0; // Reset to default "Select a question..."
             questionDropdown.focus(); // Keep focus on dropdown for quicker selection
         }
 
         function processUserSelection() {
-            const selectedDropdownIndex = questionDropdown.value;
-            if (selectedDropdownIndex === "") {
+            const selectedOptionValue = questionDropdown.value;
+            if (selectedOptionValue === "") {
                 showMessage("Selection Required", "Please select a question from the dropdown.");
                 return;
             }
 
-            const currentDialogueNode = currentScenario.dialogueTree[scenarioProgress];
-            const selectedQuestion = currentDialogueNode.nextQuestions[parseInt(selectedDropdownIndex)];
+            let selectedQuestion;
+            try {
+                selectedQuestion = JSON.parse(selectedOptionValue);
+            } catch (e) {
+                console.error("Error parsing selected question from dropdown:", e);
+                showMessage("Error", "Could not process selected question. Please try again.");
+                return;
+            }
 
             updateCallHistory('user', selectedQuestion.questionText);
             questionsAsked.push({ questionText: selectedQuestion.questionText, time: (Date.now() - callStartTime) / 1000 }); // Log user question with timestamp
             lastQuestionTime = Date.now(); // Reset last question time for patience tracking
 
             // Check if selected question is "optimal" or "relevant" to avoid high patience penalty
-            const isOptimal = currentDialogueNode.optimalQuestions && currentDialogueNode.optimalQuestions.includes(parseInt(selectedDropdownIndex));
+            const currentDialogueNodeForPatience = currentScenario.dialogueTree[scenarioProgress];
+            const isOptimal = currentDialogueNodeForPatience.optimalQuestions &&
+                              currentDialogueNodeForPatience.nextQuestions[currentDialogueNodeForPatience.optimalQuestions[0]] &&
+                              currentDialogueNodeForPatience.nextQuestions[currentDialogueNodeForPatience.optimalQuestions[0]].questionText === selectedQuestion.questionText;
+
             if (!isOptimal) {
                 callerPatience = Math.max(0, callerPatience - PATIENCE_DECREASE_IRRELEVANT); // Decrease patience for less optimal questions
             }
@@ -1371,12 +1506,9 @@
             if (selectedQuestion.info) {
                 for (const key in selectedQuestion.info) {
                     if (criticalInfoCaptured.hasOwnProperty(key)) {
-                        // Check time window for critical info
                         const currentTime = (Date.now() - callStartTime) / 1000;
                         if (selectedQuestion.isCritical && selectedQuestion.timeWindow && currentTime > selectedQuestion.timeWindow) {
                             console.warn(`Missed time window for critical info: ${key}`);
-                            // Do not mark as captured if outside time window, or add a penalty
-                            // For now, we'll just log it. Scoring will check `criticalInfoCaptured[key].captured`.
                         } else {
                             criticalInfoCaptured[key].captured = true;
                             criticalInfoCaptured[key].time = currentTime;
@@ -1393,36 +1525,28 @@
             // Append caller response to notes
             cadNotesField.value += `\nCaller: "${callerResponse}"`;
 
+            // --- Update available questions for the dropdown ---
+            // Remove the asked question from the in-memory list
+            availableQuestionsInDropdown = availableQuestionsInDropdown.filter(q => q.questionText !== selectedQuestion.questionText);
 
-            // Filter out the asked question from the available options for the next dropdown
-            // Create a new array of questions, excluding the one just asked
-            const questionsForNextDropdown = currentScenario.dialogueTree[scenarioProgress].nextQuestions;
-            const previousNodeQuestions = currentDialogueNode.nextQuestions;
+            // Get new questions from the current (new) scenarioProgress node
+            const newQuestionsFromCurrentNode = currentScenario.dialogueTree[scenarioProgress].nextQuestions;
 
-            // Combine and filter: keep unasked questions from previous node, and add new questions from current node.
-            // This ensures questions that were available but not asked remain, and new ones appear.
-            const allAvailableQuestions = [];
-            const askedQuestionText = selectedQuestion.questionText;
-
-            // Add questions from the previous node that were NOT asked
-            previousNodeQuestions.forEach(q => {
-                if (q.questionText !== askedQuestionText) {
-                    allAvailableQuestions.push(q);
-                }
-            });
-            // Add all questions from the current (new) node
-            questionsForNextDropdown.forEach(q => {
-                // Avoid duplicates if a question appears in multiple stages
-                if (!allAvailableQuestions.some(existingQ => existingQ.questionText === q.questionText)) {
-                    allAvailableQuestions.push(q);
+            // Add new questions to the available list, avoiding duplicates
+            newQuestionsFromCurrentNode.forEach(q => {
+                if (!availableQuestionsInDropdown.some(existingQ => existingQ.questionText === q.questionText)) {
+                    availableQuestionsInDropdown.push(q);
                 }
             });
 
-            populateQuestionDropdown(allAvailableQuestions);
+            // Repopulate the dropdown with the updated list of available questions
+            populateQuestionDropdown(availableQuestionsInDropdown);
 
-            if (allAvailableQuestions.length === 0 && currentScenario.dialogueTree[scenarioProgress].nextQuestions.length === 0) {
+            // If no more questions are available
+            if (availableQuestionsInDropdown.length === 0 && currentScenario.dialogueTree[scenarioProgress].nextQuestions.length === 0) {
                 questionDropdown.disabled = true;
                 askQuestionBtn.disabled = true;
+                hintBtn.disabled = true;
                 showMessage("Information Complete", "It seems all immediate information has been gathered. You can now dispatch the ambulance or end the call.", () => {
                     dispatchBtn.focus();
                 });
